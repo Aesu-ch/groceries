@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a6b3c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>🛒 Mes Courses</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -468,7 +470,7 @@ async function fetchRecipe() {
     <div class="loading"><div class="loading-emoji">🌿</div>
     <div class="loading-text">Claude prépare les ingrédients…</div></div>`;
   try {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    const resp = await fetch("https://cours-proxy.naomi-c-lovera.workers.dev/", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:800,
@@ -556,7 +558,7 @@ async function handleScan(input) {
     <div class="loading-text">Claude lit ton ticket…</div></div>`;
   try {
     const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    const resp = await fetch("https://cours-proxy.naomi-c-lovera.workers.dev/", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:800,
@@ -626,7 +628,7 @@ async function generateList() {
   const low = Object.entries(stock).filter(([,v])=>v.qty<=v.min).map(([n,v])=>`${n}: ${v.qty}/${v.min} ${v.unit}`);
   const all = Object.entries(stock).map(([n,v])=>`${n}: ${v.qty} ${v.unit}`);
   try {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    const resp = await fetch("https://cours-proxy.naomi-c-lovera.workers.dev/", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1000,
@@ -665,6 +667,11 @@ function shareWhatsApp() {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 renderStock();
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
