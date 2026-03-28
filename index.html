@@ -134,9 +134,7 @@
   .loading-sub { color: #6b8070; font-size: 13px; margin-top: 8px; font-family: system-ui; }
 
   /* FOOTER */
-  .footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1px solid #e2ece5; padding: 10px 16px; font-family: system-ui; font-size: 11px; color: #6b8070; text-align: center; }
-
-  /* TOAST */
+/* TOAST */
   .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 11px 22px; border-radius: 40px; font-size: 13px; font-family: system-ui; box-shadow: 0 4px 24px rgba(0,0,0,.18); white-space: nowrap; animation: popIn .2s ease; color: white; display: none; }
   @keyframes popIn { from { opacity:0; transform:translateX(-50%) scale(.9); } to { opacity:1; transform:translateX(-50%) scale(1); } }
   button:active { opacity: .85; transform: scale(.97); }
@@ -188,10 +186,6 @@
     </div>
   </div>
   <button class="btn btn-green btn-full" onclick="generateList()" style="margin-top:4px;box-shadow:0 4px 18px rgba(26,107,60,.28)">✨ Générer ma liste avec Claude</button>
-  <div class="shop-row">
-    <a class="shop-link" href="https://www.coop.ch/fr/livraison-a-domicile.html" target="_blank">🛒 Coop.ch →</a>
-    <a class="shop-link" href="https://www.migros.ch/fr" target="_blank">🛍 Migros.ch →</a>
-  </div>
 </div>
 
 <!-- RECIPE TAB -->
@@ -240,10 +234,6 @@
     </div>
   </div>
 </div>
-
-<!-- FOOTER -->
-<div class="footer">📱 Android : Menu ⋮ → <strong>Ajouter à l'écran d'accueil</strong></div>
-
 <script>
 // ── DEFAULT DATA ──────────────────────────────────────────────────────────────
 const DEFAULT = {
@@ -645,11 +635,7 @@ Si aucune urgence: écris 'Aucune urgence 🎉'. Format: bullet points courts. R
     document.getElementById('listContent').innerHTML = `
       <div class="ai-text">${aiListText}</div>
       <button class="btn btn-wa btn-full" onclick="shareWhatsApp()">📲 Envoyer à mon mari via WhatsApp</button>
-      <div class="shop-pair">
-        <a href="https://www.coop.ch/fr/livraison-a-domicile.html" target="_blank">🛒 Coop →</a>
-        <a href="https://www.migros.ch/fr" target="_blank">🛍 Migros →</a>
-      </div>
-      <button class="btn btn-outline btn-full" onclick="generateList()">🔄 Régénérer</button>`;
+<button class="btn btn-outline btn-full" onclick="generateList()">🔄 Régénérer</button>`;
   } catch {
     document.getElementById('listContent').innerHTML = `<div style="text-align:center;padding:20px;color:#b91c1c;font-family:system-ui">Erreur de connexion. Réessaie.</div>`;
   }
