@@ -633,13 +633,11 @@ async function generateList() {
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1000,
         messages:[{role:"user", content:`Tu es l'assistant courses d'une famille genevoise avec un bébé de 3 mois.
-Stock:\n${all.join("\n")}\nStock bas:\n${low.join("\n")||"Aucun"}
-Génère une liste de courses en français:
-1. 🚨 URGENCES (stock=0 ou sous minimum)
-2. ⚡ À réapprovisionner
-3. 🍽️ 3 repas rapides ≤30 min pour nouveaux parents
-4. 💡 1 conseil pratique
-Format: bullet points clairs avec quantités. Ton chaleureux.`}]
+Stock:\n${all.join("\n")}
+Génère une liste de courses en français avec UNIQUEMENT ces deux sections:
+1. 🚨 URGENCES — articles avec stock = 0 (quantité à racheter)
+2. ⚡ Stock bas — articles sous le minimum (quantité suggérée)
+Si aucune urgence: écris 'Aucune urgence 🎉'. Format: bullet points courts. Rien d'autre.`}]
       })
     });
     const data = await resp.json();
