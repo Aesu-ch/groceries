@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a6b3c">
+<title>🛒 Mes Courses</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; background: #f7f9f7; max-width: 430px; margin: 0 auto; min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: linear-gradient(160deg, #1a6b3c, #40916c); padding: 24px 20px 16px; color: white; }
+  .header-sub { font-size: 10px; letter-spacing: 4px; opacity: .65; text-transform: uppercase; margin-bottom: 4px; font-family: system-ui; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .header h1 { font-size: 24px; font-weight: normal; }
+  .header-status { font-size: 12px; opacity: .8; margin-top: 5px; font-family: system-ui; }
+  .critical-bar { margin-top: 12px; background: rgba(220,38,38,.22); border: 1px solid rgba(252,165,165,.4); border-radius: 10px; padding: 9px 14px; font-size: 12px; font-family: system-ui; display: none; }
+  .share-btn { background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); color: white; border-radius: 12px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: system-ui; }
+
+  /* TABS */
+  .tabs { display: flex; background: white; border-bottom: 1px solid #e2ece5; position: sticky; top: 0; z-index: 10; }
+  .tab-btn { flex: 1; padding: 12px 2px; border: none; background: transparent; border-bottom: 2.5px solid transparent; color: #6b8070; font-family: system-ui; font-size: 11px; cursor: pointer; transition: all .2s; }
+  .tab-btn.active { color: #1a6b3c; border-bottom-color: #1a6b3c; font-weight: 700; }
+
+  /* CONTENT */
+  .tab-content { display: none; padding: 14px 14px 130px; }
+  .tab-content.active { display: block; }
+
+  /* CATEGORY */
+  .cat-label { font-size: 11px; font-weight: 700; color: #40916c; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; font-family: system-ui; }
+  .cat-group { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 18px; }
+
+  /* STOCK ITEM */
+  .stock-item { display: flex; align-items: center; padding: 12px 12px; border-top: 1px solid #e2ece5; }
+  .stock-item:first-child { border-top: none; }
+  .stock-item.empty { background: #fef2f2; }
+  .stock-item.low { background: #fffbeb; }
+  .edit-icon { background: none; border: none; cursor: pointer; font-size: 15px; padding: 0 8px 0 0; color: #6b8070; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; color: #1c2b22; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .item-sub { font-size: 11px; color: #6b8070; margin-top: 1px; font-family: system-ui; }
+  .pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-family: system-ui; font-weight: 700; }
+  .pill-red { background: #fee2e2; color: #b91c1c; }
+  .pill-amber { background: #fef3c7; color: #b45309; }
+  .pill-green { background: #dcfce7; color: #166534; }
+  .qty-row { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .qty-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e2ece5; background: #f3f4f6; color: #1c2b22; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: system-ui; line-height: 1; }
+  .qty-num { width: 34px; text-align: center; font-size: 16px; font-family: system-ui; font-weight: 700; }
+  .qty-green { color: #1a6b3c; }
+  .qty-amber { color: #b45309; }
+  .qty-red { color: #b91c1c; }
+
+  /* EDIT FORM */
+  .edit-form { padding: 14px; background: #e8f5ee; border-top: 1px solid #e2ece5; }
+  .edit-form:first-child { border-top: none; }
+  .form-label { font-size: 11px; font-weight: 700; color: #1a6b3c; margin-bottom: 10px; font-family: system-ui; text-transform: uppercase; letter-spacing: 1px; }
+  .form-input { width: 100%; padding: 10px 12px; border: 1.5px solid #e2ece5; border-radius: 10px; font-size: 14px; font-family: system-ui; margin-bottom: 8px; background: white; color: #1c2b22; }
+  .form-input:focus { outline: none; border-color: #1a6b3c; }
+  .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .form-row .form-input { margin-bottom: 0; }
+  .form-select { width: 100%; padding: 10px 12px; border: 1.5px solid #e2ece5; border-radius: 10px; font-size: 14px; font-family: system-ui; margin-bottom: 8px; background: white; color: #1c2b22; }
+  .form-select:focus { outline: none; border-color: #1a6b3c; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn { border: none; border-radius: 12px; padding: 12px 16px; font-size: 14px; cursor: pointer; font-family: system-ui; font-weight: 600; color: white; }
+  .btn-green { background: #1a6b3c; }
+  .btn-gray { background: #9ca3af; }
+  .btn-red { background: #b91c1c; }
+  .btn-full { width: 100%; padding: 16px; font-size: 15px; border-radius: 16px; margin-bottom: 10px; }
+  .btn-wa { background: #25D366; }
+  .btn-outline { background: white; color: #1a6b3c; border: 1.5px solid #e2ece5; }
+
+  /* ADD FORM */
+  .add-form { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 14px; }
+  .dashed-btn { width: 100%; padding: 14px; background: white; border: 2px dashed #e2ece5; border-radius: 16px; color: #1a6b3c; font-family: system-ui; font-size: 14px; cursor: pointer; margin-bottom: 12px; }
+
+  /* SHOP LINKS */
+  .shop-row { display: flex; gap: 10px; margin-top: 12px; }
+  .shop-link { flex: 1; text-align: center; padding: 12px 8px; background: white; border-radius: 12px; color: #1a6b3c; font-size: 13px; text-decoration: none; font-family: system-ui; border: 1px solid #e2ece5; }
+
+  /* RECIPE */
+  .recipe-card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 14px; }
+  .recipe-title { font-size: 15px; color: #1c2b22; margin-bottom: 6px; }
+  .recipe-desc { font-size: 13px; color: #6b8070; margin-bottom: 16px; font-family: system-ui; line-height: 1.6; }
+  .recipe-search { display: flex; gap: 8px; }
+  .recipe-search input { flex: 1; padding: 10px 12px; border: 1.5px solid #e2ece5; border-radius: 10px; font-size: 14px; font-family: system-ui; background: white; }
+  .recipe-search input:focus { outline: none; border-color: #1a6b3c; }
+  .recipe-search button { background: #1a6b3c; color: white; border: none; border-radius: 10px; padding: 10px 16px; font-size: 18px; cursor: pointer; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip { padding: 6px 12px; background: #e8f5ee; border: 1px solid #e2ece5; border-radius: 20px; font-size: 12px; color: #1a6b3c; cursor: pointer; font-family: system-ui; }
+  .ing-list { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+  .ing-header { padding: 14px 16px; border-bottom: 1px solid #e2ece5; display: flex; justify-content: space-between; align-items: center; }
+  .ing-header-title { font-size: 14px; font-weight: 700; color: #1c2b22; }
+  .ing-header-title span { color: #40916c; font-style: italic; }
+  .ing-actions { display: flex; gap: 8px; }
+  .ing-action { font-size: 11px; background: none; border: none; cursor: pointer; font-family: system-ui; }
+  .ing-item { display: flex; align-items: center; padding: 13px 16px; border-top: 1px solid #e2ece5; cursor: pointer; transition: background .15s; }
+  .ing-item:first-child { border-top: none; }
+  .ing-item.checked { background: #e8f5ee; }
+  .checkbox { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #d1d5db; background: white; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; transition: all .15s; }
+  .checkbox.checked { background: #1a6b3c; border-color: #1a6b3c; color: white; font-size: 13px; font-weight: 700; }
+  .ing-name { font-size: 14px; color: #1c2b22; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ing-detail { font-size: 12px; color: #6b8070; margin-top: 2px; font-family: system-ui; }
+  .ing-footer { padding: 14px; border-top: 1px solid #e2ece5; }
+
+  /* SCAN */
+  .scan-card { background: white; border-radius: 18px; padding: 20px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 14px; text-align: center; }
+  .scan-emoji { font-size: 44px; margin-bottom: 12px; }
+  .scan-title { font-size: 16px; color: #1c2b22; margin-bottom: 6px; }
+  .scan-desc { font-size: 13px; color: #6b8070; margin-bottom: 20px; font-family: system-ui; line-height: 1.6; }
+  .detected-card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+  .detected-title { font-size: 13px; font-weight: 700; color: #1a6b3c; margin-bottom: 14px; font-family: system-ui; text-transform: uppercase; letter-spacing: 1px; }
+  .detected-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #e2ece5; font-family: system-ui; }
+  .detected-item:first-of-type { border-top: none; }
+  .detected-qty { font-size: 13px; color: #40916c; font-weight: 700; }
+
+  /* AI LIST */
+  .ai-text { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 14px; font-size: 14px; line-height: 1.85; color: #1c2b22; font-family: system-ui; white-space: pre-wrap; }
+  .shop-pair { display: flex; gap: 10px; margin-bottom: 10px; }
+  .shop-pair a { flex: 1; text-align: center; padding: 13px; background: #1a6b3c; color: white; border-radius: 12px; font-size: 14px; text-decoration: none; font-family: system-ui; }
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-emoji { font-size: 48px; margin-bottom: 16px; }
+  .empty-title { font-size: 15px; color: #1c2b22; margin-bottom: 8px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 50px 20px; }
+  .loading-emoji { font-size: 40px; margin-bottom: 14px; }
+  .loading-text { color: #1a6b3c; font-size: 15px; }
+  .loading-sub { color: #6b8070; font-size: 13px; margin-top: 8px; font-family: system-ui; }
+
+  /* FOOTER */
+  .footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: white; border-top: 1px solid #e2ece5; padding: 10px 16px; font-family: system-ui; font-size: 11px; color: #6b8070; text-align: center; }
+
+  /* TOAST */
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 11px 22px; border-radius: 40px; font-size: 13px; font-family: system-ui; box-shadow: 0 4px 24px rgba(0,0,0,.18); white-space: nowrap; animation: popIn .2s ease; color: white; display: none; }
+  @keyframes popIn { from { opacity:0; transform:translateX(-50%) scale(.9); } to { opacity:1; transform:translateX(-50%) scale(1); } }
+  button:active { opacity: .85; transform: scale(.97); }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-sub">Genève · Famille</div>
+  <div class="header-row">
+    <div>
+      <h1>🛒 Mes Courses</h1>
+      <div class="header-status" id="headerStatus">✓ Tout est bien approvisionné</div>
+    </div>
+    <button class="share-btn" onclick="shareWhatsApp()">📲 Partager</button>
+  </div>
+  <div class="critical-bar" id="criticalBar"></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('stock')">📦 Stock</button>
+  <button class="tab-btn" onclick="showTab('recipe')">🍝 Recette</button>
+  <button class="tab-btn" onclick="showTab('scan')">📸 Scanner</button>
+  <button class="tab-btn" onclick="showTab('list')">✨ Liste IA</button>
+</div>
+
+<!-- STOCK TAB -->
+<div class="tab-content active" id="tab-stock">
+  <div id="stockList"></div>
+  <div id="addSection">
+    <button class="dashed-btn" onclick="toggleAddForm()">+ Ajouter un article</button>
+  </div>
+  <div class="add-form" id="addForm" style="display:none">
+    <div class="form-label">Nouvel article</div>
+    <input class="form-input" id="newName" placeholder="Nom (ex: Pampers Taille 4)">
+    <div class="form-row">
+      <input class="form-input" id="newUnit" placeholder="Unité (ex: paquets)">
+      <input class="form-input" id="newMin" type="number" placeholder="Min" style="width:80px;flex:none" value="1">
+    </div>
+    <select class="form-select" id="newCat"></select>
+    <div class="btn-row">
+      <button class="btn btn-green" style="flex:1" onclick="addItem()">Ajouter</button>
+      <button class="btn btn-gray" style="flex:1" onclick="toggleAddForm()">Annuler</button>
+    </div>
+  </div>
+  <button class="btn btn-green btn-full" onclick="generateList()" style="margin-top:4px;box-shadow:0 4px 18px rgba(26,107,60,.28)">✨ Générer ma liste avec Claude</button>
+  <div class="shop-row">
+    <a class="shop-link" href="https://www.coop.ch/fr/livraison-a-domicile.html" target="_blank">🛒 Coop.ch →</a>
+    <a class="shop-link" href="https://www.migros.ch/fr" target="_blank">🛍 Migros.ch →</a>
+  </div>
+</div>
+
+<!-- RECIPE TAB -->
+<div class="tab-content" id="tab-recipe">
+  <div class="recipe-card">
+    <div class="recipe-title">🍝 Ajouter par recette</div>
+    <div class="recipe-desc">Tape le nom d'un plat. Claude génère les ingrédients et tu choisis ce que tu veux ajouter à ton stock.</div>
+    <div class="recipe-search">
+      <input type="text" id="recipeInput" placeholder="ex: bolognese, quiche, risotto…" onkeydown="if(event.key==='Enter')fetchRecipe()">
+      <button onclick="fetchRecipe()">→</button>
+    </div>
+    <div class="chips">
+      <button class="chip" onclick="setRecipe('Bolognese')">Bolognese</button>
+      <button class="chip" onclick="setRecipe('Quiche lorraine')">Quiche lorraine</button>
+      <button class="chip" onclick="setRecipe('Risotto')">Risotto</button>
+      <button class="chip" onclick="setRecipe('Soupe de légumes')">Soupe de légumes</button>
+      <button class="chip" onclick="setRecipe('Omelette')">Omelette</button>
+      <button class="chip" onclick="setRecipe('Curry poulet')">Curry poulet</button>
+    </div>
+  </div>
+  <div id="recipeResult"></div>
+</div>
+
+<!-- SCAN TAB -->
+<div class="tab-content" id="tab-scan">
+  <div class="scan-card">
+    <div class="scan-emoji">📸</div>
+    <div class="scan-title">Scanner un ticket de caisse</div>
+    <div class="scan-desc">Prends une photo de ton ticket Coop ou Migros. Claude détectera les articles et mettra à jour ton stock.</div>
+    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this)">
+    <button class="btn btn-green btn-full" onclick="document.getElementById('fileInput').click()">📷 Prendre une photo</button>
+    <input type="file" id="fileInput2" accept="image/*" style="display:none" onchange="handleScan(this)">
+    <button class="btn btn-gray btn-full" onclick="document.getElementById('fileInput2').click()">🖼 Choisir depuis la galerie</button>
+  </div>
+  <div id="scanResult"></div>
+</div>
+
+<!-- LIST TAB -->
+<div class="tab-content" id="tab-list">
+  <div id="listContent">
+    <div class="empty-state">
+      <div class="empty-emoji">🛒</div>
+      <div class="empty-title">Liste pas encore générée</div>
+      <p style="color:#6b8070;font-size:13px;font-family:system-ui;margin:8px 0 24px">Mets ton stock à jour puis génère ta liste</p>
+      <button class="btn btn-green" onclick="showTab('stock')">← Voir mon stock</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">📱 Android : Menu ⋮ → <strong>Ajouter à l'écran d'accueil</strong></div>
+
+<script>
+// ── DEFAULT DATA ──────────────────────────────────────────────────────────────
+const DEFAULT = {
+  "🍼 Bébé": [
+    { name:"Pampers Taille 3", unit:"paquets", min:1, qty:2 },
+    { name:"Aptamil Sensivia", unit:"boîtes", min:2, qty:3 },
+    { name:"Lingettes Pampers", unit:"paquets", min:2, qty:3 },
+    { name:"Crème Bepanthen", unit:"tube", min:1, qty:1 },
+  ],
+  "🧹 Maison": [
+    { name:"Papier WC", unit:"rouleaux", min:4, qty:5 },
+    { name:"Lessive", unit:"kg", min:1, qty:2 },
+    { name:"Liquide vaisselle", unit:"bouteilles", min:1, qty:1 },
+    { name:"Sacs poubelle", unit:"rouleaux", min:1, qty:2 },
+    { name:"Essuie-tout", unit:"rouleaux", min:2, qty:3 },
+  ],
+  "🥛 Frigo": [
+    { name:"Lait", unit:"litres", min:2, qty:1 },
+    { name:"Œufs", unit:"douzaines", min:1, qty:0 },
+    { name:"Beurre", unit:"paquets", min:1, qty:1 },
+    { name:"Yaourts", unit:"pots", min:4, qty:2 },
+    { name:"Fromage", unit:"paquets", min:1, qty:0 },
+  ],
+  "🥖 Épicerie": [
+    { name:"Pain", unit:"pains", min:1, qty:1 },
+    { name:"Pâtes", unit:"paquets", min:2, qty:3 },
+    { name:"Riz", unit:"kg", min:1, qty:2 },
+    { name:"Café", unit:"paquets", min:1, qty:0 },
+    { name:"Huile d'olive", unit:"bouteilles", min:1, qty:1 },
+  ],
+};
+
+const CATEGORIES = Object.keys(DEFAULT);
+
+// ── STOCK STATE ───────────────────────────────────────────────────────────────
+function buildFlat() {
+  const f = {};
+  Object.entries(DEFAULT).forEach(([cat, items]) =>
+    items.forEach(({ name, unit, min, qty }) => { f[name] = { unit, min, qty, category: cat }; })
+  );
+  return f;
+}
+
+let stock = {};
+try { stock = JSON.parse(localStorage.getItem("grocery_v4") || "null") || buildFlat(); }
+catch { stock = buildFlat(); }
+
+function save() { try { localStorage.setItem("grocery_v4", JSON.stringify(stock)); } catch {} }
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type==='err' ? '#b91c1c' : type==='info' ? '#4b5563' : '#1a6b3c';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2800);
+}
+
+// ── HEADER UPDATE ─────────────────────────────────────────────────────────────
+function updateHeader() {
+  const low = Object.entries(stock).filter(([,v]) => v.qty <= v.min);
+  const crit = Object.entries(stock).filter(([,v]) => v.qty === 0);
+  const st = document.getElementById('headerStatus');
+  const cb = document.getElementById('criticalBar');
+  if (crit.length > 0) {
+    st.textContent = `🚨 ${crit.length} épuisé · ${low.length} en stock bas`;
+    cb.textContent = `🚨 Épuisé : ${crit.map(([n])=>n).join(' · ')}`;
+    cb.style.display = 'block';
+  } else if (low.length > 0) {
+    st.textContent = `⚠️ ${low.length} article(s) en stock bas`;
+    cb.style.display = 'none';
+  } else {
+    st.textContent = '✓ Tout est bien approvisionné';
+    cb.style.display = 'none';
+  }
+}
+
+// ── RENDER STOCK ─────────────────────────────────────────────────────────────
+let editingKey = null;
+
+function renderStock() {
+  const grouped = {};
+  Object.entries(stock).forEach(([name, v]) => {
+    if (!grouped[v.category]) grouped[v.category] = [];
+    grouped[v.category].push([name, v]);
+  });
+
+  // populate category selects
+  ['newCat','editCat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const all = [...new Set([...CATEGORIES, ...Object.values(stock).map(v=>v.category)])];
+    el.innerHTML = all.map(c => `<option>${c}</option>`).join('');
+  });
+
+  let html = '';
+  Object.entries(grouped).forEach(([cat, items]) => {
+    html += `<div class="cat-label">${cat}</div><div class="cat-group">`;
+    items.forEach(([name, v]) => {
+      if (editingKey === name) {
+        const allCats = [...new Set([...CATEGORIES, ...Object.values(stock).map(v=>v.category)])];
+        html += `
+          <div class="edit-form">
+            <div class="form-label">✏️ Modifier l'article</div>
+            <input class="form-input" id="eName" value="${name}" placeholder="Nom (ex: Pampers Taille 4)" autofocus>
+            <div class="form-row">
+              <input class="form-input" id="eUnit" value="${v.unit}" placeholder="Unité">
+              <input class="form-input" id="eMin" type="number" value="${v.min}" placeholder="Min" style="width:70px;flex:none">
+              <input class="form-input" id="eQty" type="number" value="${v.qty}" placeholder="Stock" style="width:70px;flex:none">
+            </div>
+            <select class="form-select" id="eCat">${allCats.map(c=>`<option${c===v.category?' selected':''}>${c}</option>`).join('')}</select>
+            <div class="btn-row">
+              <button class="btn btn-green" style="flex:1;padding:11px" onclick="saveEdit('${name}')">✓ Enregistrer</button>
+              <button class="btn btn-gray" style="flex:1;padding:11px" onclick="cancelEdit()">Annuler</button>
+              <button class="btn btn-red" style="padding:11px 14px" onclick="deleteItem('${name}')">🗑</button>
+            </div>
+          </div>`;
+      } else {
+        const empty = v.qty === 0, low = !empty && v.qty <= v.min;
+        const cls = empty ? 'stock-item empty' : low ? 'stock-item low' : 'stock-item';
+        const qCls = empty ? 'qty-red' : low ? 'qty-amber' : 'qty-green';
+        const badges = (empty ? `<span class="pill pill-red">Épuisé</span>` : '') + (low ? `<span class="pill pill-amber">Bas</span>` : '');
+        const safeName = name.replace(/'/g, "\\'");
+        html += `
+          <div class="${cls}">
+            <button class="edit-icon" onclick="startEdit('${safeName}')">✏️</button>
+            <div class="item-info">
+              <div class="item-name">${name}${badges}</div>
+              <div class="item-sub">min ${v.min} ${v.unit}</div>
+            </div>
+            <div class="qty-row">
+              <button class="qty-btn" onclick="adj('${safeName}',-1)">−</button>
+              <span class="qty-num ${qCls}">${v.qty}</span>
+              <button class="qty-btn" onclick="adj('${safeName}',1)">+</button>
+            </div>
+          </div>`;
+      }
+    });
+    html += '</div>';
+  });
+  document.getElementById('stockList').innerHTML = html;
+  updateHeader();
+  populateCatSelect();
+}
+
+function populateCatSelect() {
+  const el = document.getElementById('newCat');
+  if (!el) return;
+  const all = [...new Set([...CATEGORIES, ...Object.values(stock).map(v=>v.category)])];
+  el.innerHTML = all.map(c=>`<option>${c}</option>`).join('');
+}
+
+function adj(name, delta) {
+  if (!stock[name]) return;
+  stock[name].qty = Math.max(0, stock[name].qty + delta);
+  save(); renderStock();
+}
+
+function startEdit(name) { editingKey = name; renderStock(); setTimeout(()=>document.getElementById('eName')?.focus(),50); }
+function cancelEdit() { editingKey = null; renderStock(); }
+
+function saveEdit(oldName) {
+  const newName = document.getElementById('eName').value.trim();
+  if (!newName) return;
+  const unit = document.getElementById('eUnit').value.trim();
+  const min = parseInt(document.getElementById('eMin').value) || 1;
+  const qty = parseInt(document.getElementById('eQty').value) || 0;
+  const category = document.getElementById('eCat').value;
+  if (newName !== oldName) delete stock[oldName];
+  stock[newName] = { unit, min, qty, category };
+  editingKey = null;
+  save(); renderStock();
+  toast('Article mis à jour ✓');
+}
+
+function deleteItem(name) {
+  delete stock[name];
+  editingKey = null;
+  save(); renderStock();
+  toast('Supprimé', 'info');
+}
+
+function toggleAddForm() {
+  const f = document.getElementById('addForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') { populateCatSelect(); document.getElementById('newName').focus(); }
+}
+
+function addItem() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) return;
+  const unit = document.getElementById('newUnit').value.trim() || 'unités';
+  const min = parseInt(document.getElementById('newMin').value) || 1;
+  const category = document.getElementById('newCat').value;
+  stock[name] = { qty: min + 1, unit, min, category };
+  document.getElementById('newName').value = '';
+  document.getElementById('newUnit').value = '';
+  document.getElementById('newMin').value = '1';
+  document.getElementById('addForm').style.display = 'none';
+  save(); renderStock();
+  toast('Article ajouté !');
+}
+
+// ── RECIPE ────────────────────────────────────────────────────────────────────
+let recipeIngredients = [], recipeSelected = {};
+
+function setRecipe(name) {
+  document.getElementById('recipeInput').value = name;
+  fetchRecipe();
+}
+
+async function fetchRecipe() {
+  const query = document.getElementById('recipeInput').value.trim();
+  if (!query) return;
+  document.getElementById('recipeResult').innerHTML = `
+    <div class="loading"><div class="loading-emoji">🌿</div>
+    <div class="loading-text">Claude prépare les ingrédients…</div></div>`;
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:800,
+        messages:[{role:"user", content:`Génère la liste d'ingrédients pour une recette de "${query}" pour 4 personnes.
+Catégories: ${CATEGORIES.join(", ")}
+Réponds UNIQUEMENT avec un JSON array, pas de markdown:
+[{"name":"Bœuf haché","qty":500,"unit":"g","category":"🥛 Frigo"}]`}]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.find(b=>b.type==="text")?.text || "[]";
+    recipeIngredients = JSON.parse(raw.replace(/```json|```/g,"").trim());
+    recipeSelected = {};
+    recipeIngredients.forEach((_,i) => { recipeSelected[i] = true; });
+    renderRecipe(query);
+  } catch {
+    document.getElementById('recipeResult').innerHTML = `<div style="text-align:center;padding:20px;color:#b91c1c;font-family:system-ui">Erreur. Réessaie.</div>`;
+  }
+}
+
+function renderRecipe(query) {
+  const checked = Object.values(recipeSelected).filter(Boolean).length;
+  let rows = recipeIngredients.map((ing, i) => {
+    const sel = recipeSelected[i];
+    const inStock = !!stock[ing.name];
+    return `
+      <div class="ing-item${sel?' checked':''}" onclick="toggleIng(${i})">
+        <div class="checkbox${sel?' checked':''}">${sel?'✓':''}</div>
+        <div style="flex:1">
+          <div class="ing-name">${ing.name}${inStock?'<span class="pill pill-green">Déjà en stock</span>':''}</div>
+          <div class="ing-detail">${ing.qty} ${ing.unit} · ${ing.category}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('recipeResult').innerHTML = `
+    <div class="ing-list">
+      <div class="ing-header">
+        <div class="ing-header-title">Ingrédients — <span>${query}</span></div>
+        <div class="ing-actions">
+          <button class="ing-action" style="color:#1a6b3c" onclick="selectAllIng()">Tout</button>
+          <button class="ing-action" style="color:#6b8070" onclick="selectNoneIng()">Aucun</button>
+        </div>
+      </div>
+      ${rows}
+      <div class="ing-footer">
+        <button class="btn btn-green" style="width:100%;padding:14px;border-radius:12px;opacity:${checked>0?1:.5}"
+          onclick="addRecipeToStock()" ${checked===0?'disabled':''}>
+          ✓ Ajouter ${checked} ingrédient(s) au stock
+        </button>
+      </div>
+    </div>`;
+}
+
+function toggleIng(i) {
+  recipeSelected[i] = !recipeSelected[i];
+  renderRecipe(document.getElementById('recipeInput').value.trim());
+}
+function selectAllIng() { recipeIngredients.forEach((_,i)=>{ recipeSelected[i]=true; }); renderRecipe(document.getElementById('recipeInput').value.trim()); }
+function selectNoneIng() { recipeIngredients.forEach((_,i)=>{ recipeSelected[i]=false; }); renderRecipe(document.getElementById('recipeInput').value.trim()); }
+
+function addRecipeToStock() {
+  const toAdd = recipeIngredients.filter((_,i)=>recipeSelected[i]);
+  toAdd.forEach(({name,unit,category})=> {
+    if (stock[name]) stock[name].qty += 1;
+    else stock[name] = { qty:0, unit:unit||'unités', min:1, category:category||'🥖 Épicerie' };
+  });
+  save(); renderStock();
+  toast(`${toAdd.length} ingrédient(s) ajouté(s) !`);
+  document.getElementById('recipeResult').innerHTML = '';
+  document.getElementById('recipeInput').value = '';
+  // switch to stock tab
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-stock').classList.add('active');
+  document.querySelector('.tab-btn').classList.add('active');
+}
+
+// ── SCAN ──────────────────────────────────────────────────────────────────────
+async function handleScan(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  document.getElementById('scanResult').innerHTML = `
+    <div class="loading"><div class="loading-emoji">🔍</div>
+    <div class="loading-text">Claude lit ton ticket…</div></div>`;
+  try {
+    const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:800,
+        messages:[{role:"user", content:[
+          {type:"image", source:{type:"base64", media_type:file.type||"image/jpeg", data:b64}},
+          {type:"text", text:`Ticket de caisse. Mon stock: ${Object.keys(stock).join(", ")}.
+Retourne UNIQUEMENT un JSON array des articles qui correspondent:
+[{"name":"nom exact de mon stock","qty_bought":nombre}]
+JSON brut seulement.`}
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.find(b=>b.type==="text")?.text || "[]";
+    const results = JSON.parse(raw.replace(/```json|```/g,"").trim());
+    renderScanResult(results);
+  } catch {
+    toast("Erreur de lecture du ticket", "err");
+    document.getElementById('scanResult').innerHTML = '';
+  }
+  input.value = "";
+}
+
+let scanResults = [];
+function renderScanResult(results) {
+  scanResults = results;
+  if (!results.length) {
+    document.getElementById('scanResult').innerHTML = `<div style="text-align:center;padding:20px;color:#6b8070;font-family:system-ui">Aucun article reconnu. Essaie avec une photo plus nette.</div>`;
+    return;
+  }
+  const rows = results.map(({name,qty_bought}) =>
+    `<div class="detected-item"><span style="font-size:14px;color:#1c2b22">${name}</span><span class="detected-qty">+${qty_bought} ${stock[name]?.unit||''}</span></div>`
+  ).join('');
+  document.getElementById('scanResult').innerHTML = `
+    <div class="detected-card">
+      <div class="detected-title">Articles détectés (${results.length})</div>
+      ${rows}
+      <button class="btn btn-green" style="width:100%;padding:13px;border-radius:12px;margin-top:14px" onclick="applyScan()">✓ Appliquer au stock</button>
+    </div>`;
+}
+
+function applyScan() {
+  scanResults.forEach(({name,qty_bought})=>{ if(stock[name]) stock[name].qty += qty_bought; });
+  save(); renderStock();
+  toast(`${scanResults.length} article(s) mis à jour !`);
+  document.getElementById('scanResult').innerHTML = '';
+  scanResults = [];
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-stock').classList.add('active');
+  document.querySelector('.tab-btn').classList.add('active');
+}
+
+// ── AI LIST ───────────────────────────────────────────────────────────────────
+let aiListText = "";
+
+async function generateList() {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-list').classList.add('active');
+  document.querySelectorAll('.tab-btn')[3].classList.add('active');
+  aiListText = "";
+  document.getElementById('listContent').innerHTML = `
+    <div class="loading"><div class="loading-emoji">🌿</div>
+    <div class="loading-text">Claude prépare ta liste…</div>
+    <div class="loading-sub">Analyse du stock en cours</div></div>`;
+  const low = Object.entries(stock).filter(([,v])=>v.qty<=v.min).map(([n,v])=>`${n}: ${v.qty}/${v.min} ${v.unit}`);
+  const all = Object.entries(stock).map(([n,v])=>`${n}: ${v.qty} ${v.unit}`);
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:1000,
+        messages:[{role:"user", content:`Tu es l'assistant courses d'une famille genevoise avec un bébé de 3 mois.
+Stock:\n${all.join("\n")}\nStock bas:\n${low.join("\n")||"Aucun"}
+Génère une liste de courses en français:
+1. 🚨 URGENCES (stock=0 ou sous minimum)
+2. ⚡ À réapprovisionner
+3. 🍽️ 3 repas rapides ≤30 min pour nouveaux parents
+4. 💡 1 conseil pratique
+Format: bullet points clairs avec quantités. Ton chaleureux.`}]
+      })
+    });
+    const data = await resp.json();
+    aiListText = data.content?.find(b=>b.type==="text")?.text || "Erreur.";
+    document.getElementById('listContent').innerHTML = `
+      <div class="ai-text">${aiListText}</div>
+      <button class="btn btn-wa btn-full" onclick="shareWhatsApp()">📲 Envoyer à mon mari via WhatsApp</button>
+      <div class="shop-pair">
+        <a href="https://www.coop.ch/fr/livraison-a-domicile.html" target="_blank">🛒 Coop →</a>
+        <a href="https://www.migros.ch/fr" target="_blank">🛍 Migros →</a>
+      </div>
+      <button class="btn btn-outline btn-full" onclick="generateList()">🔄 Régénérer</button>`;
+  } catch {
+    document.getElementById('listContent').innerHTML = `<div style="text-align:center;padding:20px;color:#b91c1c;font-family:system-ui">Erreur de connexion. Réessaie.</div>`;
+  }
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────────────────────────
+function shareWhatsApp() {
+  const crit = Object.entries(stock).filter(([,v])=>v.qty===0).map(([n])=>`❌ ${n}`).join("\n");
+  const low = Object.entries(stock).filter(([,v])=>v.qty>0&&v.qty<=v.min).map(([n,v])=>`⚠️ ${n} (${v.qty} restant)`).join("\n");
+  const msg = `🛒 *Liste de courses* – ${new Date().toLocaleDateString("fr-CH")}\n\n${crit?`*URGENCES:*\n${crit}\n\n`:''}${low?`*Stock bas:*\n${low}`:''}${aiListText?`\n\n📋 Liste:\n${aiListText.slice(0,500)}…`:''}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderStock();
+</script>
+</body>
+</html>
