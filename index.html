@@ -168,7 +168,7 @@
 
 <!-- STOCK TAB -->
 <div class="tab-content active" id="tab-stock">
-  <div id="stockList"></div>
+    <button class="btn btn-green btn-full" onclick="generateList()" style="margin-bottom:10px;box-shadow:0 4px 18px rgba(26,107,60,.28)">✨ Générer ma liste avec Claude</button>
   <div id="addSection">
     <button class="dashed-btn" onclick="toggleAddForm()">+ Ajouter un article</button>
   </div>
@@ -177,7 +177,7 @@
     <input class="form-input" id="newName" placeholder="Nom (ex: Pampers Taille 4)">
     <div class="form-row">
       <input class="form-input" id="newUnit" placeholder="Unité (ex: paquets)">
-      <input class="form-input" id="newMin" type="number" placeholder="Min" style="width:80px;flex:none" value="1">
+      <input class="form-input" id="newMin" type="number" placeholder="Min" style="width:80px;flex:none" value="0" min="0">
     </div>
     <select class="form-select" id="newCat"></select>
     <div class="btn-row">
@@ -185,7 +185,8 @@
       <button class="btn btn-gray" style="flex:1" onclick="toggleAddForm()">Annuler</button>
     </div>
   </div>
-  <button class="btn btn-green btn-full" onclick="generateList()" style="margin-top:4px;box-shadow:0 4px 18px rgba(26,107,60,.28)">✨ Générer ma liste avec Claude</button>
+<div id="stockList"></div>
+
 </div>
 
 <!-- RECIPE TAB -->
@@ -213,8 +214,23 @@
 <div class="tab-content" id="tab-scan">
   <div class="scan-card">
     <div class="scan-emoji">📸</div>
-    <div class="scan-title">Scanner un ticket de caisse</div>
-    <div class="scan-desc">Prends une photo de ton ticket Coop ou Migros. Claude détectera les articles et mettra à jour ton stock.</div>
+    <div class="scan-title">Analyser avec Claude</div>
+    <div class="scan-desc">Ticket de caisse, sac de courses, frigo ouvert — Claude reconnaît les articles et met à jour ton stock.</div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn btn-full" id="modeTicket" onclick="setScanMode('ticket')"
+        style="flex:1;margin-bottom:0;background:#1a6b3c;font-size:13px;padding:12px 6px">
+        🧾 Ticket
+      </button>
+      <button class="btn btn-full" id="modeImage" onclick="setScanMode('image')"
+        style="flex:1;margin-bottom:0;background:#e8f5ee;color:#1a6b3c;border:1.5px solid #c6d9c9;font-size:13px;padding:12px 6px">
+        🛍 Photo contenu
+      </button>
+    </div>
+    <div id="scanModeDesc" style="font-size:12px;color:#6b8070;font-family:system-ui;margin-bottom:14px;text-align:center">
+      Mode ticket : détecte ce que tu as acheté sur ton reçu
+    </div>
+
     <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this)">
     <button class="btn btn-green btn-full" onclick="document.getElementById('fileInput').click()">📷 Prendre une photo</button>
     <input type="file" id="fileInput2" accept="image/*" style="display:none" onchange="handleScan(this)">
@@ -349,7 +365,7 @@ function renderStock() {
             <input class="form-input" id="eName" value="${name}" placeholder="Nom (ex: Pampers Taille 4)" autofocus>
             <div class="form-row">
               <input class="form-input" id="eUnit" value="${v.unit}" placeholder="Unité">
-              <input class="form-input" id="eMin" type="number" value="${v.min}" placeholder="Min" style="width:70px;flex:none">
+              <input class="form-input" id="eMin" type="number" value="${v.min}" placeholder="Min" min="0" style="width:70px;flex:none">
               <input class="form-input" id="eQty" type="number" value="${v.qty}" placeholder="Stock" style="width:70px;flex:none">
             </div>
             <select class="form-select" id="eCat">${allCats.map(c=>`<option${c===v.category?' selected':''}>${c}</option>`).join('')}</select>
@@ -360,7 +376,7 @@ function renderStock() {
             </div>
           </div>`;
       } else {
-        const empty = v.qty === 0, low = !empty && v.qty <= v.min;
+        const empty = v.qty === 0 && v.min > 0; const low = !empty && v.min > 0 && v.qty <= v.min && v.qty > 0;
         const cls = empty ? 'stock-item empty' : low ? 'stock-item low' : 'stock-item';
         const qCls = empty ? 'qty-red' : low ? 'qty-amber' : 'qty-green';
         const badges = (empty ? `<span class="pill pill-red">Épuisé</span>` : '') + (low ? `<span class="pill pill-amber">Bas</span>` : '');
@@ -407,7 +423,7 @@ function saveEdit(oldName) {
   const newName = document.getElementById('eName').value.trim();
   if (!newName) return;
   const unit = document.getElementById('eUnit').value.trim();
-  const min = parseInt(document.getElementById('eMin').value) || 1;
+  const minE = parseInt(document.getElementById('eMin').value); const min = isNaN(minE) ? 0 : minE;
   const qty = parseInt(document.getElementById('eQty').value) || 0;
   const category = document.getElementById('eCat').value;
   if (newName !== oldName) delete stock[oldName];
@@ -434,7 +450,7 @@ function addItem() {
   const name = document.getElementById('newName').value.trim();
   if (!name) return;
   const unit = document.getElementById('newUnit').value.trim() || 'unités';
-  const min = parseInt(document.getElementById('newMin').value) || 1;
+  const min = parseInt(document.getElementById('newMin').value) ?? 0; const minVal = isNaN(min) ? 0 : min;
   const category = document.getElementById('newCat').value;
   stock[name] = { qty: min + 1, unit, min, category };
   document.getElementById('newName').value = '';
@@ -540,12 +556,27 @@ function addRecipeToStock() {
 }
 
 // ── SCAN ──────────────────────────────────────────────────────────────────────
+let scanMode = 'ticket';
+function setScanMode(mode) {
+  scanMode = mode;
+  const isTicket = mode === 'ticket';
+  document.getElementById('modeTicket').style.background = isTicket ? '#1a6b3c' : '#e8f5ee';
+  document.getElementById('modeTicket').style.color = isTicket ? 'white' : '#1a6b3c';
+  document.getElementById('modeTicket').style.border = isTicket ? 'none' : '1.5px solid #c6d9c9';
+  document.getElementById('modeImage').style.background = !isTicket ? '#1a6b3c' : '#e8f5ee';
+  document.getElementById('modeImage').style.color = !isTicket ? 'white' : '#1a6b3c';
+  document.getElementById('modeImage').style.border = !isTicket ? 'none' : '1.5px solid #c6d9c9';
+  document.getElementById('scanModeDesc').textContent = isTicket
+    ? 'Mode ticket : détecte ce que tu as acheté sur ton reçu'
+    : 'Mode photo : analyse le contenu visible (sac, frigo, étagère…)';
+}
+
 async function handleScan(input) {
   const file = input.files?.[0];
   if (!file) return;
   document.getElementById('scanResult').innerHTML = `
     <div class="loading"><div class="loading-emoji">🔍</div>
-    <div class="loading-text">Claude lit ton ticket…</div></div>`;
+    <div class="loading-text">${scanMode === "ticket" ? "Claude lit ton ticket…" : "Claude analyse la photo…"}</div></div>`;
   try {
     const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
     const resp = await fetch("https://cours-proxy.naomi-c-lovera.workers.dev/", {
@@ -554,10 +585,16 @@ async function handleScan(input) {
         model:"claude-sonnet-4-20250514", max_tokens:800,
         messages:[{role:"user", content:[
           {type:"image", source:{type:"base64", media_type:file.type||"image/jpeg", data:b64}},
-          {type:"text", text:`Ticket de caisse. Mon stock: ${Object.keys(stock).join(", ")}.
-Retourne UNIQUEMENT un JSON array des articles qui correspondent:
+          {type:"text", text:scanMode === 'ticket'
+            ? `Ticket de caisse. Mon stock: ${Object.keys(stock).join(", ")}.
+Retourne UNIQUEMENT un JSON array des articles achetés qui correspondent à mon stock:
 [{"name":"nom exact de mon stock","qty_bought":nombre}]
-JSON brut seulement.`}
+JSON brut seulement, pas de markdown.`
+            : `Photo du contenu d'un sac de courses ou d'un espace de stockage. Mon stock: ${Object.keys(stock).join(", ")}.
+Identifie les articles visibles qui correspondent à mon stock et estime les quantités.
+Retourne UNIQUEMENT un JSON array:
+[{"name":"nom exact de mon stock","qty_bought":nombre}]
+JSON brut seulement, pas de markdown.`}
         ]}]
       })
     });
