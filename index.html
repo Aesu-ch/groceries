@@ -39,22 +39,12 @@
   /* STOCK ITEM */
   .stock-item { display: flex; align-items: center; padding: 12px 12px; border-top: 1px solid #e2ece5; }
   .stock-item:first-child { border-top: none; }
-  .stock-item.empty { background: #fef2f2; }
-  .stock-item.low { background: #fffbeb; }
   .edit-icon { background: none; border: none; cursor: pointer; font-size: 15px; padding: 0 8px 0 0; color: #6b8070; flex-shrink: 0; }
   .item-info { flex: 1; min-width: 0; }
   .item-name { font-size: 14px; color: #1c2b22; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .item-sub { font-size: 11px; color: #6b8070; margin-top: 1px; font-family: system-ui; }
   .pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-family: system-ui; font-weight: 700; }
-  .pill-red { background: #fee2e2; color: #b91c1c; }
-  .pill-amber { background: #fef3c7; color: #b45309; }
   .pill-green { background: #dcfce7; color: #166534; }
-  .qty-row { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-  .qty-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e2ece5; background: #f3f4f6; color: #1c2b22; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: system-ui; line-height: 1; }
-  .qty-num { width: 34px; text-align: center; font-size: 16px; font-family: system-ui; font-weight: 700; }
-  .qty-green { color: #1a6b3c; }
-  .qty-amber { color: #b45309; }
-  .qty-red { color: #b91c1c; }
 
   /* EDIT FORM */
   .edit-form { padding: 14px; background: #e8f5ee; border-top: 1px solid #e2ece5; }
@@ -171,10 +161,10 @@
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab-btn active" onclick="showTab('stock')">📦 Stock</button>
+  <button class="tab-btn active" onclick="showTab('stock')">🛒 Liste de course</button>
   <button class="tab-btn" onclick="showTab('recipe')">🍝 Recette</button>
   <button class="tab-btn" onclick="showTab('cats')">🏷 Catégories</button>
-  <button class="tab-btn" onclick="showTab('list')">✨ Liste IA</button>
+  <button class="tab-btn" onclick="showTab('list')">⚡ Générer</button>
 </div>
 
 <!-- STOCK TAB -->
@@ -186,10 +176,7 @@
   <div class="add-form" id="addForm" style="display:none">
     <div class="form-label">Nouvel article</div>
     <input class="form-input" id="newName" placeholder="Nom (ex: Pampers Taille 4)">
-    <div class="form-row">
-      <input class="form-input" id="newUnit" placeholder="Unité (ex: paquets)">
-      <input class="form-input" id="newMin" type="number" placeholder="Min" style="width:80px;flex:none" value="0" min="0">
-    </div>
+
     <select class="form-select" id="newCat"></select>
     <div class="btn-row">
       <button class="btn btn-green" style="flex:1" onclick="addItem()">Ajouter</button>
@@ -316,21 +303,10 @@ function toast(msg, type='ok') {
 
 // ── HEADER UPDATE ─────────────────────────────────────────────────────────────
 function updateHeader() {
-  const low = Object.entries(stock).filter(([,v]) => v.enabled !== false && v.qty <= v.min);
-  const crit = Object.entries(stock).filter(([,v]) => v.enabled !== false && v.qty === 0);
-  const st = document.getElementById('headerStatus');
-  const cb = document.getElementById('criticalBar');
-  if (crit.length > 0) {
-    st.textContent = `🚨 ${crit.length} épuisé · ${low.length} en stock bas`;
-    cb.textContent = `🚨 Épuisé : ${crit.map(([n])=>n).join(' · ')}`;
-    cb.style.display = 'block';
-  } else if (low.length > 0) {
-    st.textContent = `⚠️ ${low.length} article(s) en stock bas`;
-    cb.style.display = 'none';
-  } else {
-    st.textContent = '✓ Tout est bien approvisionné';
-    cb.style.display = 'none';
-  }
+  const active = Object.values(stock).filter(v => v.enabled !== false).length;
+  const total = Object.keys(stock).length;
+  document.getElementById('headerStatus').textContent = `${active} article(s) actif(s) · ${total - active} au placard`;
+  document.getElementById('criticalBar').style.display = 'none';
 }
 
 // ── RENDER STOCK ─────────────────────────────────────────────────────────────
@@ -436,11 +412,7 @@ function renderStock() {
           <div class="edit-form">
             <div class="form-label">✏️ Modifier l'article</div>
             <input class="form-input" id="eName" value="${name}" placeholder="Nom (ex: Pampers Taille 4)" autofocus>
-            <div class="form-row">
-              <input class="form-input" id="eUnit" value="${v.unit}" placeholder="Unité">
-              <input class="form-input" id="eMin" type="number" value="${v.min}" placeholder="Min" min="0" style="width:70px;flex:none">
-              <input class="form-input" id="eQty" type="number" value="${v.qty}" placeholder="Stock" style="width:70px;flex:none">
-            </div>
+
             <select class="form-select" id="eCat">${allCats.map(c=>`<option${c===v.category?' selected':''}>${c}</option>`).join('')}</select>
             <div class="btn-row">
               <button class="btn btn-green" style="flex:1;padding:11px" onclick="saveEdit('${name}')">✓ Enregistrer</button>
@@ -449,27 +421,18 @@ function renderStock() {
             </div>
           </div>`;
       } else {
-        const empty = v.qty === 0; const low = !empty && v.min > 0 && v.qty <= v.min;
-        const cls = empty ? 'stock-item empty' : low ? 'stock-item low' : 'stock-item';
-        const qCls = empty ? 'qty-red' : low ? 'qty-amber' : 'qty-green';
-        const badges = (empty ? `<span class="pill pill-red">Épuisé</span>` : '') + (low ? `<span class="pill pill-amber">Bas</span>` : '');
         const safeName = name.replace(/'/g, "\\'");
         html += `
-          <div class="${cls}">
+          <div class="stock-item">
             <button class="edit-icon" onclick="startEdit('${safeName}')">✏️</button>
             <div class="item-info">
-              <div class="item-name">${name}${badges}</div>
-              <div class="item-sub">min ${v.min} ${v.unit}</div>
+              <div class="item-name">${name}</div>
+
             </div>
-            <div class="qty-row">
-              <button class="qty-btn" onclick="adj('${safeName}',-1)">−</button>
-              <span class="qty-num ${qCls}">${v.qty}</span>
-              <button class="qty-btn" onclick="adj('${safeName}',1)">+</button>
-              <label class="toggle" style="margin-left:8px" title="Désactiver">
-                <input type="checkbox" checked onchange="toggleItem('${safeName}', this.checked)">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
+            <label class="toggle" title="Désactiver">
+              <input type="checkbox" checked onchange="toggleItem('${safeName}', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
           </div>`;
       }
     });
@@ -482,24 +445,17 @@ function renderStock() {
     html += `<div class="cat-group">`;
     placard.forEach(([name, v], i) => {
       const safeName = name.replace(/'/g, "\\'");
-      const empty = v.qty === 0;
-      const badges = empty ? `<span class="pill pill-red">Épuisé</span>` : '';
       html += `
         <div class="stock-item item-disabled" style="border-top:${i>0?'1px solid #f0f0f0':'none'}">
           <button class="edit-icon" onclick="startEdit('${safeName}')">✏️</button>
           <div class="item-info">
-            <div class="item-name">${name}${badges}</div>
-            <div class="item-sub">${v.qty} ${v.unit}</div>
+            <div class="item-name">${name}</div>
+
           </div>
-          <div class="qty-row">
-            <button class="qty-btn" onclick="adj('${safeName}',-1)">−</button>
-            <span class="qty-num" style="color:#9ca3af">${v.qty}</span>
-            <button class="qty-btn" onclick="adj('${safeName}',1)">+</button>
-            <label class="toggle" style="margin-left:8px" title="Activer">
-              <input type="checkbox" onchange="toggleItem('${safeName}', this.checked)">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+          <label class="toggle" title="Activer">
+            <input type="checkbox" onchange="toggleItem('${safeName}', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
         </div>`;
     });
     html += `</div>`;
@@ -535,9 +491,9 @@ function cancelEdit() { editingKey = null; renderStock(); }
 function saveEdit(oldName) {
   const newName = document.getElementById('eName').value.trim();
   if (!newName) return;
-  const unit = document.getElementById('eUnit').value.trim();
-  const minE = parseInt(document.getElementById('eMin').value); const min = isNaN(minE) ? 0 : minE;
-  const qty = parseInt(document.getElementById('eQty').value) || 0;
+  const unit = stock[editingKey]?.unit || 'unités';
+  const min = stock[editingKey]?.min ?? 0;
+  const qty = stock[editingKey]?.qty ?? 0;
   const category = document.getElementById('eCat').value;
   if (newName !== oldName) delete stock[oldName];
   stock[newName] = { unit, min, qty, category };
@@ -562,8 +518,8 @@ function toggleAddForm() {
 function addItem() {
   const name = document.getElementById('newName').value.trim();
   if (!name) return;
-  const unit = document.getElementById('newUnit').value.trim() || 'unités';
-  const min = parseInt(document.getElementById('newMin').value) ?? 0; const minVal = isNaN(min) ? 0 : min;
+  const unit = 'unités';
+  const minVal = 0;
   const category = document.getElementById('newCat').value;
   stock[name] = { qty: min + 1, unit, min, category };
   document.getElementById('newName').value = '';
