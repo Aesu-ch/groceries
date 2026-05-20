@@ -108,17 +108,6 @@
   .ing-detail { font-size: 12px; color: #6b8070; margin-top: 2px; font-family: system-ui; }
   .ing-footer { padding: 14px; border-top: 1px solid #e2ece5; }
 
-  /* SCAN */
-  .scan-card { background: white; border-radius: 18px; padding: 20px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 14px; text-align: center; }
-  .scan-emoji { font-size: 44px; margin-bottom: 12px; }
-  .scan-title { font-size: 16px; color: #1c2b22; margin-bottom: 6px; }
-  .scan-desc { font-size: 13px; color: #6b8070; margin-bottom: 20px; font-family: system-ui; line-height: 1.6; }
-  .detected-card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
-  .detected-title { font-size: 13px; font-weight: 700; color: #1a6b3c; margin-bottom: 14px; font-family: system-ui; text-transform: uppercase; letter-spacing: 1px; }
-  .detected-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #e2ece5; font-family: system-ui; }
-  .detected-item:first-of-type { border-top: none; }
-  .detected-qty { font-size: 13px; color: #40916c; font-weight: 700; }
-
   /* AI LIST */
   .ai-text { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 14px; font-size: 14px; line-height: 1.85; color: #1c2b22; font-family: system-ui; white-space: pre-wrap; }
   .shop-pair { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -138,6 +127,15 @@
   .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 11px 22px; border-radius: 40px; font-size: 13px; font-family: system-ui; box-shadow: 0 4px 24px rgba(0,0,0,.18); white-space: nowrap; animation: popIn .2s ease; color: white; display: none; }
   @keyframes popIn { from { opacity:0; transform:translateX(-50%) scale(.9); } to { opacity:1; transform:translateX(-50%) scale(1); } }
   button:active { opacity: .85; transform: scale(.97); }
+  /* TOGGLE */
+  .toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; position:absolute; }
+  .toggle-slider { position:absolute; inset:0; border-radius:22px; background:#d1d5db; cursor:pointer; transition:.2s; }
+  .toggle-slider:before { content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; border-radius:50%; background:white; transition:.2s; }
+  .toggle input:checked + .toggle-slider { background:#1a6b3c; }
+  .toggle input:checked + .toggle-slider:before { transform:translateX(18px); }
+  .item-disabled { opacity: 0.38; }
+
   /* CATEGORY MANAGER */
   .cat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .cat-edit-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #6b8070; padding: 2px 6px; border-radius: 6px; font-family: system-ui; }
@@ -176,7 +174,6 @@
   <button class="tab-btn active" onclick="showTab('stock')">📦 Stock</button>
   <button class="tab-btn" onclick="showTab('recipe')">🍝 Recette</button>
   <button class="tab-btn" onclick="showTab('cats')">🏷 Catégories</button>
-  <button class="tab-btn" onclick="showTab('scan')">📸 Scanner</button>
   <button class="tab-btn" onclick="showTab('list')">✨ Liste IA</button>
 </div>
 
@@ -227,35 +224,6 @@
 <!-- CATEGORIES TAB -->
 <div class="tab-content" id="tab-cats">
   <div id="catManager"></div>
-</div>
-
-<!-- SCAN TAB -->
-<div class="tab-content" id="tab-scan">
-  <div class="scan-card">
-    <div class="scan-emoji">📸</div>
-    <div class="scan-title">Analyser avec Claude</div>
-    <div class="scan-desc">Ticket de caisse, sac de courses, frigo ouvert — Claude reconnaît les articles et met à jour ton stock.</div>
-
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="btn btn-full" id="modeTicket" onclick="setScanMode('ticket')"
-        style="flex:1;margin-bottom:0;background:#1a6b3c;font-size:13px;padding:12px 6px">
-        🧾 Ticket
-      </button>
-      <button class="btn btn-full" id="modeImage" onclick="setScanMode('image')"
-        style="flex:1;margin-bottom:0;background:#e8f5ee;color:#1a6b3c;border:1.5px solid #c6d9c9;font-size:13px;padding:12px 6px">
-        🛍 Photo contenu
-      </button>
-    </div>
-    <div id="scanModeDesc" style="font-size:12px;color:#6b8070;font-family:system-ui;margin-bottom:14px;text-align:center">
-      Mode ticket : détecte ce que tu as acheté sur ton reçu
-    </div>
-
-    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handleScan(this)">
-    <button class="btn btn-green btn-full" onclick="document.getElementById('fileInput').click()">📷 Prendre une photo</button>
-    <input type="file" id="fileInput2" accept="image/*" style="display:none" onchange="handleScan(this)">
-    <button class="btn btn-gray btn-full" onclick="document.getElementById('fileInput2').click()">🖼 Choisir depuis la galerie</button>
-  </div>
-  <div id="scanResult"></div>
 </div>
 
 <!-- LIST TAB -->
@@ -317,7 +285,7 @@ categories = loadCategories();
 function buildFlat() {
   const f = {};
   Object.entries(DEFAULT).forEach(([cat, items]) =>
-    items.forEach(({ name, unit, min, qty }) => { f[name] = { unit, min, qty, category: cat }; })
+    items.forEach(({ name, unit, min, qty }) => { f[name] = { unit, min, qty, category: cat, enabled: true }; })
   );
   return f;
 }
@@ -348,8 +316,8 @@ function toast(msg, type='ok') {
 
 // ── HEADER UPDATE ─────────────────────────────────────────────────────────────
 function updateHeader() {
-  const low = Object.entries(stock).filter(([,v]) => v.qty <= v.min);
-  const crit = Object.entries(stock).filter(([,v]) => v.qty === 0);
+  const low = Object.entries(stock).filter(([,v]) => v.enabled !== false && v.qty <= v.min);
+  const crit = Object.entries(stock).filter(([,v]) => v.enabled !== false && v.qty === 0);
   const st = document.getElementById('headerStatus');
   const cb = document.getElementById('criticalBar');
   if (crit.length > 0) {
@@ -439,7 +407,9 @@ function addCat() {
 
 function renderStock() {
   const grouped = {};
+  const placard = [];
   Object.entries(stock).forEach(([name, v]) => {
+    if (v.enabled === false) { placard.push([name, v]); return; }
     if (!grouped[v.category]) grouped[v.category] = [];
     grouped[v.category].push([name, v]);
   });
@@ -495,12 +465,46 @@ function renderStock() {
               <button class="qty-btn" onclick="adj('${safeName}',-1)">−</button>
               <span class="qty-num ${qCls}">${v.qty}</span>
               <button class="qty-btn" onclick="adj('${safeName}',1)">+</button>
+              <label class="toggle" style="margin-left:8px" title="Désactiver">
+                <input type="checkbox" checked onchange="toggleItem('${safeName}', this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
           </div>`;
       }
     });
     html += '</div>';
   });
+
+  // ── PLACARD (disabled items) ──
+  if (placard.length > 0) {
+    html += `<div class="cat-label" style="color:#9ca3af;margin-top:8px">🗄 Placard</div>`;
+    html += `<div class="cat-group">`;
+    placard.forEach(([name, v], i) => {
+      const safeName = name.replace(/'/g, "\\'");
+      const empty = v.qty === 0;
+      const badges = empty ? `<span class="pill pill-red">Épuisé</span>` : '';
+      html += `
+        <div class="stock-item item-disabled" style="border-top:${i>0?'1px solid #f0f0f0':'none'}">
+          <button class="edit-icon" onclick="startEdit('${safeName}')">✏️</button>
+          <div class="item-info">
+            <div class="item-name">${name}${badges}</div>
+            <div class="item-sub">${v.qty} ${v.unit}</div>
+          </div>
+          <div class="qty-row">
+            <button class="qty-btn" onclick="adj('${safeName}',-1)">−</button>
+            <span class="qty-num" style="color:#9ca3af">${v.qty}</span>
+            <button class="qty-btn" onclick="adj('${safeName}',1)">+</button>
+            <label class="toggle" style="margin-left:8px" title="Activer">
+              <input type="checkbox" onchange="toggleItem('${safeName}', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
   document.getElementById('stockList').innerHTML = html;
   updateHeader();
   populateCatSelect();
@@ -511,6 +515,12 @@ function populateCatSelect() {
   if (!el) return;
   const all = [...new Set([...categories, ...Object.values(stock).map(v=>v.category)])];
   el.innerHTML = all.map(c=>`<option>${c}</option>`).join('');
+}
+
+function toggleItem(name, enabled) {
+  if (!stock[name]) return;
+  stock[name].enabled = enabled;
+  save(); renderStock();
 }
 
 function adj(name, delta) {
@@ -659,89 +669,6 @@ function addRecipeToStock() {
 }
 
 // ── SCAN ──────────────────────────────────────────────────────────────────────
-let scanMode = 'ticket';
-function setScanMode(mode) {
-  scanMode = mode;
-  const isTicket = mode === 'ticket';
-  document.getElementById('modeTicket').style.background = isTicket ? '#1a6b3c' : '#e8f5ee';
-  document.getElementById('modeTicket').style.color = isTicket ? 'white' : '#1a6b3c';
-  document.getElementById('modeTicket').style.border = isTicket ? 'none' : '1.5px solid #c6d9c9';
-  document.getElementById('modeImage').style.background = !isTicket ? '#1a6b3c' : '#e8f5ee';
-  document.getElementById('modeImage').style.color = !isTicket ? 'white' : '#1a6b3c';
-  document.getElementById('modeImage').style.border = !isTicket ? 'none' : '1.5px solid #c6d9c9';
-  document.getElementById('scanModeDesc').textContent = isTicket
-    ? 'Mode ticket : détecte ce que tu as acheté sur ton reçu'
-    : 'Mode photo : analyse le contenu visible (sac, frigo, étagère…)';
-}
-
-async function handleScan(input) {
-  const file = input.files?.[0];
-  if (!file) return;
-  document.getElementById('scanResult').innerHTML = `
-    <div class="loading"><div class="loading-emoji">🔍</div>
-    <div class="loading-text">${scanMode === "ticket" ? "Claude lit ton ticket…" : "Claude analyse la photo…"}</div></div>`;
-  try {
-    const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
-    const resp = await fetch("https://cours-proxy.naomi-c-lovera.workers.dev/", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        model:"claude-sonnet-4-20250514", max_tokens:800,
-        messages:[{role:"user", content:[
-          {type:"image", source:{type:"base64", media_type:file.type||"image/jpeg", data:b64}},
-          {type:"text", text:scanMode === 'ticket'
-            ? `Ticket de caisse. Mon stock: ${Object.keys(stock).join(", ")}.
-Retourne UNIQUEMENT un JSON array des articles achetés qui correspondent à mon stock:
-[{"name":"nom exact de mon stock","qty_bought":nombre}]
-JSON brut seulement, pas de markdown.`
-            : `Photo du contenu d'un sac de courses ou d'un espace de stockage. Mon stock: ${Object.keys(stock).join(", ")}.
-Identifie les articles visibles qui correspondent à mon stock et estime les quantités.
-Retourne UNIQUEMENT un JSON array:
-[{"name":"nom exact de mon stock","qty_bought":nombre}]
-JSON brut seulement, pas de markdown.`}
-        ]}]
-      })
-    });
-    const data = await resp.json();
-    const raw = data.content?.find(b=>b.type==="text")?.text || "[]";
-    const results = JSON.parse(raw.replace(/```json|```/g,"").trim());
-    renderScanResult(results);
-  } catch {
-    toast("Erreur de lecture du ticket", "err");
-    document.getElementById('scanResult').innerHTML = '';
-  }
-  input.value = "";
-}
-
-let scanResults = [];
-function renderScanResult(results) {
-  scanResults = results;
-  if (!results.length) {
-    document.getElementById('scanResult').innerHTML = `<div style="text-align:center;padding:20px;color:#6b8070;font-family:system-ui">Aucun article reconnu. Essaie avec une photo plus nette.</div>`;
-    return;
-  }
-  const rows = results.map(({name,qty_bought}) =>
-    `<div class="detected-item"><span style="font-size:14px;color:#1c2b22">${name}</span><span class="detected-qty">+${qty_bought} ${stock[name]?.unit||''}</span></div>`
-  ).join('');
-  document.getElementById('scanResult').innerHTML = `
-    <div class="detected-card">
-      <div class="detected-title">Articles détectés (${results.length})</div>
-      ${rows}
-      <button class="btn btn-green" style="width:100%;padding:13px;border-radius:12px;margin-top:14px" onclick="applyScan()">✓ Appliquer au stock</button>
-    </div>`;
-}
-
-function applyScan() {
-  scanResults.forEach(({name,qty_bought})=>{ if(stock[name]) stock[name].qty += qty_bought; });
-  save(); renderStock();
-  toast(`${scanResults.length} article(s) mis à jour !`);
-  document.getElementById('scanResult').innerHTML = '';
-  scanResults = [];
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-stock').classList.add('active');
-  document.querySelector('.tab-btn').classList.add('active');
-}
-
 // ── AI LIST ───────────────────────────────────────────────────────────────────
 let aiListText = "";
 
@@ -755,8 +682,9 @@ async function generateList() {
     <div class="loading"><div class="loading-emoji">🌿</div>
     <div class="loading-text">Claude prépare ta liste…</div>
     <div class="loading-sub">Analyse du stock en cours</div></div>`;
-  const low = Object.entries(stock).filter(([,v])=>v.qty<=v.min).map(([n,v])=>`${n}: ${v.qty}/${v.min} ${v.unit}`);
-  const all = Object.entries(stock).map(([n,v])=>`${n}: ${v.qty} ${v.unit}`);
+  const activeStock = Object.entries(stock).filter(([,v])=>v.enabled!==false);
+  const low = activeStock.filter(([,v])=>v.qty<=v.min).map(([n,v])=>`${n}: ${v.qty}/${v.min} ${v.unit}`);
+  const all = activeStock.map(([n,v])=>`${n}: ${v.qty} ${v.unit}`);
   try {
     const resp = await fetch("https://cours-proxy.naomi-c-lovera.workers.dev/", {
       method:"POST", headers:{"Content-Type":"application/json"},
@@ -783,8 +711,8 @@ Si aucune urgence: écris 'Aucune urgence 🎉'. Format: bullet points courts. R
 
 // ── WHATSAPP ──────────────────────────────────────────────────────────────────
 function shareWhatsApp() {
-  const crit = Object.entries(stock).filter(([,v])=>v.qty===0).map(([n])=>`❌ ${n}`).join("\n");
-  const low = Object.entries(stock).filter(([,v])=>v.qty>0&&v.qty<=v.min).map(([n,v])=>`⚠️ ${n} (${v.qty} restant)`).join("\n");
+  const crit = Object.entries(stock).filter(([,v])=>v.enabled!==false&&v.qty===0).map(([n])=>`❌ ${n}`).join("\n");
+  const low = Object.entries(stock).filter(([,v])=>v.enabled!==false&&v.qty>0&&v.qty<=v.min).map(([n,v])=>`⚠️ ${n} (${v.qty} restant)`).join("\n");
   const msg = `🛒 *Liste de courses* – ${new Date().toLocaleDateString("fr-CH")}\n\n${crit?`*URGENCES:*\n${crit}\n\n`:''}${low?`*Stock bas:*\n${low}`:''}${aiListText?`\n\n📋 Liste:\n${aiListText.slice(0,500)}…`:''}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 }
