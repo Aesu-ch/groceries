@@ -518,13 +518,9 @@ function toggleAddForm() {
 function addItem() {
   const name = document.getElementById('newName').value.trim();
   if (!name) return;
-  const unit = 'unités';
-  const minVal = 0;
   const category = document.getElementById('newCat').value;
-  stock[name] = { qty: min + 1, unit, min, category };
+  stock[name] = { qty: 0, unit: 'unités', min: 0, category, enabled: true };
   document.getElementById('newName').value = '';
-  document.getElementById('newUnit').value = '';
-  document.getElementById('newMin').value = '1';
   document.getElementById('addForm').style.display = 'none';
   save(); renderStock();
   toast('Article ajouté !');
